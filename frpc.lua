@@ -892,7 +892,6 @@ Options:
     end
 
     conf_init(conffile)
-    dump(common)
 
     local server_addr = opts.s or opts['server-addr']
     if server_addr then
