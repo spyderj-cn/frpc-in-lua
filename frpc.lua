@@ -16,7 +16,7 @@ require 'tasklet.channel.message'
 
 local strerror, EBADF = errno.strerror, errno.EBADF
 
-local VERSION_STRING = '0.9.3'
+local VRESION_STRING = '0.9.3'
 
 local MSG_TYPE = {
     NewCtlConn = 0,
@@ -84,25 +84,38 @@ local clog = (function ()
     end
 
     local ret = {}
-    for _, v in pairs({'debug', 'info', 'warn', 'error'}) do
+    for _, v in pairs({'debug', 'info', 'warn', 'error', 'fatal'}) do
         ret[v] = make_clog(v)
     end
     return ret
 end)()
 
 -- XXX: now no lua-bindings for md5, use the shell tool.
-local function getauthkey(client, str)
+local function getauthkey(client, str, retry)
     local file = io.popen('echo -n "' .. str .. '" | md5sum ')
     local val
     if file then
         local line = file:read('*line')
         if line then
             val = line:match('^(%S+)')
+            if not val then
+                clog.error(client, 'illegal response for md5sum "', str, '" -> ', line)
+            end
+        else
+            clog.error(client, 'empty response for the popen file -> md5sum "', str, '"')
         end
-		file:close()
+        file:close()
+    else
+        clog.error(client, 'popen failed ->  md5sum  "', str, '"')
     end
+    
     if not val then
-        clog.fatal(client, 'md5sum failed for "', str, '"')
+        retry = retry or 3
+        if retry > 0 then
+            tasklet.sleep(0.3)
+            return getauthkey(client, str, retry - 1)
+        end
+        val = ''
     end
     return val
 end
@@ -879,7 +892,7 @@ Options:
         }) or log.fatal('illegal arguments\n', usage)
 
     if opts.h or opts.help then
-        print(help)
+        print(usage)
         os.exit(0)
     end
     if opts.v or opts.version then
