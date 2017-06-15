@@ -11,6 +11,10 @@ frpc-in-lua当前对应frp v0.9.3，且暂不支持：
 * 转发加密
 * 通过http proxy连接frps
 
+但也提供了额外的功能：
+* 为了能与您的配置系统融合，ini中支持类似shell函数求值的写法， 例如： server_addr=$(uci get myconfig.frpc.server_addr)
+* frpctl.lua可用于动态的添加/删除/查看一个代理项，此工具不是必须的
+
 使用方式:  lua frpc.lua -c frpc.ini
 
 更多信息请使用: lua frpc.lua -h
