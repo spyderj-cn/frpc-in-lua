@@ -16,7 +16,7 @@ require 'tasklet.channel.message'
 
 local strerror, EBADF = errno.strerror, errno.EBADF
 
-local VRESION_STRING = '0.9.3'
+local VERSION_STRING = '0.9.3'
 
 local MSG_TYPE = {
     NewCtlConn = 0,
@@ -892,7 +892,7 @@ Options:
         }) or log.fatal('illegal arguments\n', usage)
 
     if opts.h or opts.help then
-        print(usage)
+        print(help)
         os.exit(0)
     end
     if opts.v or opts.version then
