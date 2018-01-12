@@ -90,36 +90,6 @@ local clog = (function ()
     return ret
 end)()
 
--- XXX: now no lua-bindings for md5, use the shell tool.
-local function getauthkey(client, str, retry)
-    local file = io.popen('echo -n "' .. str .. '" | md5sum ')
-    local val
-    if file then
-        local line = file:read('*line')
-        if line then
-            val = line:match('^(%S+)')
-            if not val then
-                clog.error(client, 'illegal response for md5sum "', str, '" -> ', line)
-            end
-        else
-            clog.error(client, 'empty response for the popen file -> md5sum "', str, '"')
-        end
-        file:close()
-    else
-        clog.error(client, 'popen failed ->  md5sum  "', str, '"')
-    end
-    
-    if not val then
-        retry = retry or 3
-        if retry > 0 then
-            tasklet.sleep(0.3)
-            return getauthkey(client, str, retry - 1)
-        end
-        val = ''
-    end
-    return val
-end
-
 local function make_http_proxy_conn(client, addr, port)
     local http = require 'http'
     -- TODO
@@ -322,9 +292,9 @@ local function tunnel_task()
     }
 
 	if req.privilege_mode then
-		req.privilege_key = getauthkey(client, client.name .. client.privilege_token .. now)
+		req.privilege_key = md5(client.name .. client.privilege_token .. now)
 	else
-        req.auth_key = getauthkey(client, client.name .. client.auth_token .. now)
+        req.auth_key = md5(client.name .. client.auth_token .. now)
 	end
 
     -- just a few bytes, guess no problem with tmpbuf here.
@@ -555,12 +525,12 @@ local function make_control_conn(client)
     }
 
     if req.privilege_mode then
-        req.privilege_key = getauthkey(client, client.name .. client.privilege_token .. now)
+        req.privilege_key = md5(client.name .. client.privilege_token .. now)
         req.remote_port = client.remote_port
         req.custom_domains = client.custom_domains
         req.locations = client.locations
     else
-        req.auth_key = getauthkey(client, client.name .. client.auth_token .. now)
+        req.auth_key = md5(client.name .. client.auth_token .. now)
     end
 
     repeat
